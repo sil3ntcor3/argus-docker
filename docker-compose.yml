@@ -1,9 +1,9 @@
 services:
   console:
-    container_name: oasm-console
-    image: oasm/oasm-console:${IMAGE_TAG:-latest}
+    container_name: argus-console
+    image: argus/argus-console:${IMAGE_TAG:-latest}
     networks:
-      - oasm
+      - argus
     ports:
       - '6276:80'
     volumes:
@@ -14,10 +14,10 @@ services:
         condition: service_healthy
 
   core-api:
-    container_name: oasm-api
-    image: oasm/oasm-api:${IMAGE_TAG:-latest}
+    container_name: argus-api
+    image: argus/argus-api:${IMAGE_TAG:-latest}
     networks:
-      - oasm
+      - argus
     ports:
       - '16276:16276'
     environment:
@@ -28,7 +28,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-open_asm}
       - POSTGRES_SSL=${POSTGRES_SSL:-false}
       - PORT=${PORT:-6276}
-      - OASM_CLOUD_APIKEY=${OASM_CLOUD_APIKEY}
+      - ARGUS_CLOUD_APIKEY=${ARGUS_CLOUD_APIKEY}
       - REDIS_URL=${REDIS_URL:-redis://:open_asm@redis:6379/0}
       - GEO_IP_URL=geo-ip-database:4360
       - RUSTFS_ENDPOINT=${RUSTFS_ENDPOINT:-http://rustfs:9000}
@@ -51,10 +51,10 @@ services:
       retries: 10
 
   rustfs:
-    container_name: oasm-rustfs
+    container_name: argus-rustfs
     image: rustfs/rustfs:latest
     networks:
-      - oasm
+      - argus
     environment:
       - RUSTFS_ACCESS_KEY=${RUSTFS_ACCESS_KEY:-rustfsadmin}
       - RUSTFS_SECRET_KEY=${RUSTFS_SECRET_KEY:-rustfssecret}
@@ -69,10 +69,10 @@ services:
     command: ['/data']
 
   migration:
-    container_name: oasm-migration
-    image: oasm/oasm-api:${IMAGE_TAG:-latest}
+    container_name: argus-migration
+    image: argus/argus-api:${IMAGE_TAG:-latest}
     networks:
-      - oasm
+      - argus
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
       - POSTGRES_USERNAME=${POSTGRES_USERNAME:-postgres}
@@ -86,33 +86,33 @@ services:
       postgres:
         condition: service_healthy
 
-  oasm-worker:
-    image: oasm/oasm-worker:${IMAGE_TAG:-latest}
+  argus-worker:
+    image: argus/argus-worker:${IMAGE_TAG:-latest}
     # Replicas started by `docker compose up` / `make`. No ports are published
     # (see WORKER_CONNECTOR_NETWORK below), so replicas never collide.
     deploy:
       replicas: ${WORKER_REPLICAS:-3}
     environment:
-      - WORKER_API_KEY=${OASM_CLOUD_APIKEY}
+      - WORKER_API_KEY=${ARGUS_CLOUD_APIKEY}
       - WORKER_MODE=node
       - WORKER_GRPC_HOST=core-api
       - WORKER_GRPC_PORT=16276
       - WORKER_MAX_CONCURRENCY=10
-      - WORKER_TOOL_PATH=/app/oasm-tools
-      # Spawned connector containers join the oasm_connectors network and dial
+      - WORKER_TOOL_PATH=/app/argus-tools
+      # Spawned connector containers join the argus_connectors network and dial
       # this replica directly on its own IP there (:26276). No host port is
       # published, so the service scales: `docker compose up -d --scale
-      # oasm-worker=3`. Connectors are NOT on oasm_net, so they cannot reach
+      # argus-worker=3`. Connectors are NOT on argus_connectors, so they cannot reach
       # postgres/redis. Requires a worker image with WORKER_CONNECTOR_NETWORK
       # support (open-asm#779).
-      - WORKER_CONNECTOR_NETWORK=oasm_connectors
+      - WORKER_CONNECTOR_NETWORK=argus_connectors
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: '3'
     volumes:
-      - worker-tools-cache:/app/oasm-tools:rw
+      - worker-tools-cache:/app/argus-tools:rw
       # Node mode spawns connector containers via the Docker Engine API
       # (internal/runtime/docker.go), so it MUST reach a daemon. SECURITY:
       # docker.sock is root-equivalent on the host — only run trusted images.
@@ -125,15 +125,15 @@ services:
     group_add:
       - '${DOCKER_GID:-0}'
     networks:
-      - oasm
-      - oasm-connectors
+      - argus
+      - argus-connectors
     restart: always
     depends_on:
       core-api:
         condition: service_healthy
 
   postgres:
-    container_name: oasm-postgres
+    container_name: argus-postgres
     image: postgres:18
     restart: on-failure
     environment:
@@ -144,7 +144,7 @@ services:
       # postgres:18 keeps PGDATA in /var/lib/postgresql/18/docker; mount the parent.
       - pgdata18:/var/lib/postgresql:rw
     networks:
-      - oasm
+      - argus
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USERNAME:-postgres}']
       interval: 1s
@@ -152,11 +152,11 @@ services:
       retries: 10
 
   redis:
-    container_name: oasm-redis
+    container_name: argus-redis
     image: redis:alpine
     restart: on-failure
     networks:
-      - oasm
+      - argus
     volumes:
       - redis-data:/data
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --save 3600 1 --save 30 500 --save 300 100 --save 60 10000
@@ -179,10 +179,10 @@ services:
 
   geo-ip-database:
     container_name: geo-ip-database
-    image: ghcr.io/oasm-platform/dbip:latest
+    image: ghcr.io/sil3ntcor3/dbip:latest
     platform: linux/amd64
     networks:
-      - oasm
+      - argus
     restart: on-failure
     volumes:
       - geoip-data:/app/data:rw
@@ -200,11 +200,11 @@ volumes:
   worker-tools-cache:
 
 networks:
-  oasm:
+  argus:
     driver: bridge
-    name: oasm_net
+    name: argus_net
   # Fixed name: the worker attaches the connector containers it spawns through
   # the Engine API by this exact name (WORKER_CONNECTOR_NETWORK).
-  oasm-connectors:
+argus-connectors:
     driver: bridge
-    name: oasm_connectors
+    name: argus_connectors
