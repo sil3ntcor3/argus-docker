@@ -1,7 +1,7 @@
 services:
   console:
     container_name: argus-console
-    image: argus/argus-console:${IMAGE_TAG:-latest}
+    image: sil3ntcor3/argus-console:${IMAGE_TAG:-latest}
     networks:
       - argus
     ports:
@@ -15,7 +15,7 @@ services:
 
   core-api:
     container_name: argus-api
-    image: argus/argus-api:${IMAGE_TAG:-latest}
+    image: sil3ntcor3/argus-api:${IMAGE_TAG:-latest}
     networks:
       - argus
     ports:
@@ -70,7 +70,7 @@ services:
 
   migration:
     container_name: argus-migration
-    image: argus/argus-api:${IMAGE_TAG:-latest}
+    image: sil3ntcor3/argus-api:${IMAGE_TAG:-latest}
     networks:
       - argus
     environment:
@@ -87,7 +87,7 @@ services:
         condition: service_healthy
 
   argus-worker:
-    image: argus/argus-worker:${IMAGE_TAG:-latest}
+    image: sil3ntcor3/argus-worker:${IMAGE_TAG:-latest}
     # Replicas started by `docker compose up` / `make`. No ports are published
     # (see WORKER_CONNECTOR_NETWORK below), so replicas never collide.
     deploy:
@@ -179,7 +179,7 @@ services:
 
   geo-ip-database:
     container_name: geo-ip-database
-    image: ghcr.io/sil3ntcor3/dbip:latest
+    image: ghcr.io/oasm-platform/dbip:latest
     platform: linux/amd64
     networks:
       - argus
@@ -205,6 +205,6 @@ networks:
     name: argus_net
   # Fixed name: the worker attaches the connector containers it spawns through
   # the Engine API by this exact name (WORKER_CONNECTOR_NETWORK).
-argus-connectors:
+  argus-connectors:
     driver: bridge
     name: argus_connectors
