@@ -31,7 +31,7 @@ services:
       # No default on purpose: an empty key silently disables cloud workers,
       # a shipped default hands anyone who reads this repo the key that claims
       # every workspace's jobs. Fail at `docker compose up` instead.
-      - ARGUS_CLOUD_APIKEY=${OASM_CLOUD_APIKEY:?set OASM_CLOUD_APIKEY in .env, see README quick start}
+      - ARGUS_CLOUD_APIKEY=${ARGUS_CLOUD_APIKEY:?set ARGUS_CLOUD_APIKEY in .env, see README quick start}
       - REDIS_URL=${REDIS_URL:-redis://:open_asm@redis:6379/0}
       - GEO_IP_URL=geo-ip-database:4360
       - RUSTFS_ENDPOINT=${RUSTFS_ENDPOINT:-http://rustfs:9000}
