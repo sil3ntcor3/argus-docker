@@ -28,12 +28,19 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-open_asm}
       - POSTGRES_SSL=${POSTGRES_SSL:-false}
       - PORT=${PORT:-6276}
-      - ARGUS_CLOUD_APIKEY=${ARGUS_CLOUD_APIKEY}
+      # No default on purpose: an empty key silently disables cloud workers,
+      # a shipped default hands anyone who reads this repo the key that claims
+      # every workspace's jobs. Fail at `docker compose up` instead.
+      - OASM_CLOUD_APIKEY=${OASM_CLOUD_APIKEY:?set OASM_CLOUD_APIKEY in .env, see README quick start}
       - REDIS_URL=${REDIS_URL:-redis://:open_asm@redis:6379/0}
       - GEO_IP_URL=geo-ip-database:4360
       - RUSTFS_ENDPOINT=${RUSTFS_ENDPOINT:-http://rustfs:9000}
       - RUSTFS_ACCESS_KEY=${RUSTFS_ACCESS_KEY:-rustfsadmin}
       - RUSTFS_SECRET_KEY=${RUSTFS_SECRET_KEY:-rustfssecret}
+      - ENCRYPTION_KEYS=${ENCRYPTION_KEYS:-}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
+      - BASE_URL=${BASE_URL:-}
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
     restart: on-failure
     depends_on:
       postgres:
