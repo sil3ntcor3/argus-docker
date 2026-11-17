@@ -73,6 +73,7 @@ All settings come from `.env` (created from `.env.example`).
 | `IMAGE_TAG` | `latest` | Image tag for all `oasm/*` images |
 | `ARGUS_CLOUD_APIKEY` | Required | Shared secret for global workers. Compose supplies it to core and as `WORKER_API_KEY` to each worker. |
 | `WORKER_REPLICAS` | `3` | Number of `oasm-worker` replicas started by `make` |
+| `DOCKER_GID` | `0` | Group owning `/var/run/docker.sock`; set it on native Linux (`stat -c '%g' /var/run/docker.sock`) |
 | `POSTGRES_HOST` | `postgres` | |
 | `POSTGRES_USERNAME` | `postgres` | |
 | `POSTGRES_PASSWORD` | `postgres` | Change before exposing anything |
@@ -193,6 +194,6 @@ docker compose exec postgres pg_dump -U postgres open_asm > backup.sql
 ## Security
 
 - `/var/run/docker.sock` is mounted into `oasm-worker` and is root-equivalent on the host. Run only trusted images and treat the worker as privileged.
-- The image runs as uid/gid `1000`; `group_add: ['0']` grants socket access. On a host with a dedicated `docker` group, use that gid instead.
+- The image runs as uid/gid `1000`; `group_add: ['${DOCKER_GID:-0}']` grants socket access. On a host with a dedicated `docker` group, set `DOCKER_GID` to that gid, or the worker logs "container engine unavailable" and skips connector jobs.
 - Change every default in `.env` — Postgres password, Redis password, RustFS keys, and `ENCRYPTION_KEYS` — before exposing the stack beyond localhost.
 - The GeoIP image is pinned to `linux/amd64`; on ARM hosts it runs under emulation or not at all.
