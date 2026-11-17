@@ -21,9 +21,11 @@ The worker mounts `/var/run/docker.sock` and spawns connector containers on the 
 ## Quick start
 
 ```bash
-cp .env.example .env   # then edit secrets
+cp .env.example .env   # then set ARGUS_CLOUD_APIKEY and edit the other secrets
 make                   # pull latest commit + pull images + start
 ```
+
+Set `ARGUS_CLOUD_APIKEY` to a strong shared secret. On upgrade, rename the existing cloud key entry in `.env` and keep its value. The API image must support `ARGUS_CLOUD_APIKEY` for new global workers to join. With the default `:latest` tag, use a `main` image build that includes the rename. If you pin or roll back an image, use the Compose configuration that matches it.
 
 Without Make:
 
@@ -69,7 +71,7 @@ All settings come from `.env` (created from `.env.example`).
 | Variable | Default | Notes |
 | --- | --- | --- |
 | `IMAGE_TAG` | `latest` | Image tag for all `oasm/*` images |
-| `OASM_CLOUD_APIKEY` | `change_me` | Cloud API key; also used as `WORKER_API_KEY` |
+| `ARGUS_CLOUD_APIKEY` | Required | Shared secret for global workers. Compose supplies it to core and as `WORKER_API_KEY` to each worker. |
 | `WORKER_REPLICAS` | `3` | Number of `oasm-worker` replicas started by `make` |
 | `POSTGRES_HOST` | `postgres` | |
 | `POSTGRES_USERNAME` | `postgres` | |
