@@ -105,7 +105,10 @@ services:
       - WORKER_GRPC_HOST=core-api
       - WORKER_GRPC_PORT=16276
       - WORKER_MAX_CONCURRENCY=10
-      - WORKER_TOOL_PATH=/app/argus-tools
+      # Must match the directory the worker image pre-creates as uid 1000. A
+      # path missing from the image makes Docker create the volume root-owned,
+      # tool download fails with "permission denied" and no job is ever polled.
+      - WORKER_TOOL_PATH=/app/oasm-tools
       # Spawned connector containers join the argus_connectors network and dial
       # this replica directly on its own IP there (:26276). No host port is
       # published, so the service scales: `docker compose up -d --scale
@@ -119,7 +122,7 @@ services:
         max-size: 10m
         max-file: '3'
     volumes:
-      - worker-tools-cache:/app/argus-tools:rw
+      - worker-tools-cache:/app/oasm-tools:rw
       # Node mode spawns connector containers via the Docker Engine API
       # (internal/runtime/docker.go), so it MUST reach a daemon. SECURITY:
       # docker.sock is root-equivalent on the host — only run trusted images.
